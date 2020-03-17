@@ -1,0 +1,8 @@
+python-dotenv
+aiohttp
+azure-cognitiveservices-language-luis==0.2.0
+botbuilder-core
+botbuilder-ai==4.7.1
+pandas
+numpy
+geopy

@@ -1,0 +1,11 @@
+# Remember to ignore .env (famous last words)
+.env
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+/notebooks/.ipynb_checkpoints/
