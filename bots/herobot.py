@@ -16,6 +16,9 @@ geopy.geocoders.options.default_timeout = 8
 from . import helpers
 def filter_by_cntry(df, cntry):
     out = (df.loc[df["Country/Region"] == cntry]
+           .groupby(["Country/Region", "Date"])[["Confirmed", "Deaths", "Recovered"]]
+           .sum()
+           .reset_index()
            .sort_values("Date", ascending=False)
            .head(1))
     if out.shape[0] == 0: out = None
