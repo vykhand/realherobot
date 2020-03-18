@@ -1,0 +1,29 @@
+  
+name: Deploy to Azure App Service
+
+on:
+  push:
+    paths-ignore:
+    - 'README.md'
+    branches:
+    - dev
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    # Set Python version (https://github.com/actions/setup-python)
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.7.x' 
+        architecture: 'x64' 
+
+    # Deploy the app to App Service (https://github.com/Azure/webapps-deploy)
+    - uses: azure/webapps-deploy@v1
+      with:
+        app-name: realherobot
+        publish-profile: ${{ secrets.PUBLISH_PROFILE }}
