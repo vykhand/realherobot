@@ -1,4 +1,4 @@
-
+import os
 from azure.cognitiveservices.language.luis.runtime.models import LuisResult
 
 from botbuilder.ai.luis import LuisApplication, LuisRecognizer, LuisPredictionOptions
@@ -23,6 +23,9 @@ def filter_by_cntry(df, cntry):
     return  out
 class HeroBot(ActivityHandler):
     def __init__(self, config: DefaultConfig):
+        # downloading the latest dataset
+
+        os.system("kaggle datasets download imdevskp/corona-virus-report -p ./data")
 
         luis_application = LuisApplication(
             config.LUIS_APP_ID,
