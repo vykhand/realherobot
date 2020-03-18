@@ -1,4 +1,4 @@
-# Remember to ignore .env (famous last words)
+# Ignore python-dotenv secrets
 .env
 
 # Byte-compiled / optimized / DLL files
@@ -8,4 +8,6 @@ __pycache__/
 
 # C extensions
 *.so
-/notebooks/.ipynb_checkpoints/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
