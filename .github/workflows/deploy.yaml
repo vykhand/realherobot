@@ -22,11 +22,11 @@ jobs:
         python-version: '3.7.x' 
         architecture: 'x64' 
     
-    - name: 'Run pip'
-      shell: bash
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt --target=".python_packages/lib/python3.7/site-packages"
+    # - name: 'Run pip'
+    #   shell: bash
+    #   run: |
+    #     python -m pip install --upgrade pip
+    #     pip install -r requirements.txt --target=".python_packages/lib/python3.7/site-packages"
 
     # Deploy the app to App Service (https://github.com/Azure/webapps-deploy)
     - uses: azure/webapps-deploy@v1
