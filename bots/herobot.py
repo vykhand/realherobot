@@ -100,7 +100,7 @@ class HeroBot(ActivityHandler):
         outputs =  []
         if luis_result.entities:
             for ent in luis_result.entities:
-                loc = self._AzMap.geocode(ent.entity)
+                loc = self._AzMap.geocode(ent.entity, language='en-US')
                 cntry = loc.raw["address"]["country"]
                 out = filter_by_cntry(df, cntry)
                 if out is None:

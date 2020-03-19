@@ -12,3 +12,8 @@ __pycache__/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+
+# Ignore data/
+data/*.zip
+data/*.csv
+

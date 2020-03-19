@@ -59,6 +59,18 @@ ADAPTER.on_turn_error = on_error
 # Create the Bot
 BOT = HeroBot(CONFIG)
 
+async def refresh_dataset(req: Request) -> Response:
+    # Handle dataset update
+    if "application/json" in req.headers["Content-Type"]:
+        body = await req.json()
+    else:
+        return Response(status=415)
+
+    # BOT.fetch_dataset()
+
+    activity = Activity().deserialize(body)
+
+    return Response(status=200, text="All good")
 
 # Listen for incoming requests on /api/messages
 async def messages(req: Request) -> Response:
@@ -78,6 +90,7 @@ async def messages(req: Request) -> Response:
 
 
 APP = web.Application(middlewares=[aiohttp_error_middleware])
+APP.router.add_post("/api/refresh-dataset", refresh_dataset)
 APP.router.add_post("/api/messages", messages)
 
 if __name__ == "__main__":
