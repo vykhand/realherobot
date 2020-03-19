@@ -62,7 +62,7 @@ class HeroBot(ActivityHandler):
                     title="Welcome to the COVID-19 Information bot",
                     images=[
                         CardImage(
-                            url="https://github.com/vykhand/realherobot/raw/master/assets/sars-cov-2.jpg"
+                            url="https://i.imgur.com/zm095AG.png"
                         )
                     ],
                     buttons=[
