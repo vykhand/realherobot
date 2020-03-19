@@ -28,7 +28,8 @@ class HeroBot(ActivityHandler):
     def __init__(self, config: DefaultConfig):
         # downloading the latest dataset
 
-        os.system("python $PYTHONPATH/bin/kaggle datasets download imdevskp/corona-virus-report -p ./data")
+        print("[INFO] Downloading Kaggle dataset...")
+        os.system("kaggle datasets download imdevskp/corona-virus-report -p ./data")
 
         luis_application = LuisApplication(
             config.LUIS_APP_ID,
