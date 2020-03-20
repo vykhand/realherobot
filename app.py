@@ -97,7 +97,8 @@ async def messages(req: Request) -> Response:
         return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     activity = Activity().deserialize(body)
-    logger.warning(f'activity = {str(activity)}')
+    if activity.text:
+        logger.warning(f'activity.text = {activity.text}')
 
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
