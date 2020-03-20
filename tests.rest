@@ -1,3 +1,4 @@
 POST http://localhost:3978/api/refresh-dataset
+Content-Type: application/none
 
 { "dummy": true }

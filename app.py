@@ -59,18 +59,19 @@ ADAPTER.on_turn_error = on_error
 # Create the Bot
 BOT = HeroBot(CONFIG)
 
+# Listen on /api/refresh-dataset
 async def refresh_dataset(req: Request) -> Response:
     # Handle dataset update
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
-        return Response(status=415)
+        return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     # BOT.fetch_dataset()
 
     activity = Activity().deserialize(body)
 
-    return Response(status=200, text="All good")
+    return Response(status=200, text="Alright, refresh_dataset handler works.")
 
 # Listen for incoming requests on /api/messages
 async def messages(req: Request) -> Response:
@@ -78,7 +79,7 @@ async def messages(req: Request) -> Response:
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
-        return Response(status=415)
+        return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     activity = Activity().deserialize(body)
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
