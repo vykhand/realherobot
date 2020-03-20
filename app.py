@@ -59,6 +59,12 @@ ADAPTER.on_turn_error = on_error
 # Create the Bot
 BOT = HeroBot(CONFIG)
 
+# Listen on / for GET requests
+# Only used by App Service AlwaysOn pings for now
+async def handle_get(req: Request) -> Response:
+
+    return Response(status=200, text="Hello.")    
+
 # Listen on /api/refresh-dataset
 async def refresh_dataset(req: Request) -> Response:
     # Handle dataset update
@@ -91,8 +97,9 @@ async def messages(req: Request) -> Response:
 
 
 APP = web.Application(middlewares=[aiohttp_error_middleware])
-APP.router.add_post("/api/refresh-dataset", refresh_dataset)
 APP.router.add_post("/api/messages", messages)
+APP.router.add_post("/api/refresh-dataset", refresh_dataset)
+APP.router.add_get("/", handle_get)
 
 if __name__ == "__main__":
     try:
