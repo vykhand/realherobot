@@ -3,8 +3,8 @@ from azure.cognitiveservices.language.luis.runtime.models import LuisResult
 
 from botbuilder.ai.luis import LuisApplication, LuisRecognizer, LuisPredictionOptions
 from botbuilder.ai.qna import QnAMaker, QnAMakerEndpoint
-from botbuilder.core import ActivityHandler, TurnContext, RecognizerResult
-from botbuilder.schema import ChannelAccount
+from botbuilder.core import ActivityHandler, TurnContext, RecognizerResult, CardFactory, MessageFactory
+from botbuilder.schema import ChannelAccount, HeroCard, ActionTypes, CardAction, CardImage, Attachment
 
 from config import DefaultConfig
 import pandas as pd
@@ -12,6 +12,7 @@ from geopy.geocoders import AzureMaps
 import geopy
 # Set a sane HTTP request timeout for geopy
 geopy.geocoders.options.default_timeout = 8
+
 
 from . import helpers
 def filter_by_cntry(df, cntry):
@@ -24,6 +25,8 @@ def filter_by_cntry(df, cntry):
     if out.shape[0] == 0: out = None
 
     return  out
+
+
 class HeroBot(ActivityHandler):
     def __init__(self, config: DefaultConfig):
         # downloading the latest dataset
@@ -55,10 +58,24 @@ class HeroBot(ActivityHandler):
     ):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
-                await turn_context.send_activity(
-                    f"Welcome to Dispatch bot {member.name}. Type a greeting or a "
-                    f"question about the weather to get started."
+                card = HeroCard(
+                    title="Welcome to the COVID-19 Information bot",
+                    images=[
+                        CardImage(
+                            url="https://i.imgur.com/zm095AG.png"
+                        )
+                    ],
+                    buttons=[
+                        CardAction(
+                            type=ActionTypes.open_url,
+                            title="Repository link",
+                            value="https://github.com/vykhand/realherobot",
+                        )
+                    ],
                 )
+                repl = MessageFactory.list([])
+                repl.attachments.append(CardFactory.hero_card(card))
+                await turn_context.send_activity(repl)
 
     async def on_message_activity(self, turn_context: TurnContext):
         # First, we use the dispatch model to determine which cognitive service (LUIS or QnA) to use.
