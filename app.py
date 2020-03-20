@@ -5,6 +5,8 @@ import sys
 import traceback
 from datetime import datetime
 
+import logging
+
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
 from botbuilder.core import (
@@ -17,8 +19,15 @@ from botbuilder.schema import Activity, ActivityTypes
 
 from bots import HeroBot
 from config import DefaultConfig
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 CONFIG = DefaultConfig()
+
+# Application Insights bootstrap via OpenCensus
+logger = logging.getLogger(__name__)
+logger.addHandler(AzureLogHandler(
+    connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
+)
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
@@ -88,6 +97,8 @@ async def messages(req: Request) -> Response:
         return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     activity = Activity().deserialize(body)
+    logger.warning(f'activity.text = {activity.text}')
+
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
     response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)

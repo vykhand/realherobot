@@ -7,3 +7,4 @@ pandas
 numpy
 geopy
 kaggle
+opencensus-ext-azure
