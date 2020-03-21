@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler(
     connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
 )
+# Root logger level is WARNING by default
+logger.setLevel(logging.DEBUG)
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
@@ -84,8 +86,6 @@ async def refresh_dataset(req: Request) -> Response:
 
     # BOT.fetch_dataset()
 
-    activity = Activity().deserialize(body)
-
     return Response(status=200, text="Alright, refresh_dataset handler works.")
 
 # Listen for incoming requests on /api/messages
@@ -98,7 +98,7 @@ async def messages(req: Request) -> Response:
 
     activity = Activity().deserialize(body)
     if activity.text:
-        logger.warning(f'activity.text = {activity.text}')
+        logger.debug(f'activity.text = {activity.text}')
 
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
