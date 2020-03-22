@@ -6,5 +6,4 @@ botbuilder-ai==4.7.1
 pandas
 numpy
 geopy
-kaggle
 opencensus-ext-azure

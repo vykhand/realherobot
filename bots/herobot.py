@@ -30,8 +30,11 @@ class HeroBot(ActivityHandler):
         )
         self.recognizer = LuisRecognizer(luis_application, luis_options, True)
 
-        #TODO: get the file from storage
+        self.fetch_dataset()
 
+        self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
+
+    def fetch_dataset(self):
         self._confirmed = pd.read_csv(
             "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv",
             index_col=["Country/Region", "Province/State"]).iloc[:, -1]
@@ -42,8 +45,6 @@ class HeroBot(ActivityHandler):
             "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv",
             index_col=["Country/Region", "Province/State"]).iloc[:, -1]
         self._curr_date = pd.to_datetime(self._confirmed.name)
-
-        self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
 
     def _filter_by_cntry(self, cntry):
         out = None
