@@ -15,24 +15,10 @@ geopy.geocoders.options.default_timeout = 8
 
 
 from . import helpers
-def filter_by_cntry(df, cntry):
-    out = (df.loc[df["Country/Region"] == cntry]
-           .groupby(["Country/Region", "Date"])[["Confirmed", "Deaths", "Recovered"]]
-           .sum()
-           .reset_index()
-           .sort_values("Date", ascending=False)
-           .head(1))
-    if out.shape[0] == 0: out = None
-
-    return  out
 
 
 class HeroBot(ActivityHandler):
     def __init__(self, config: DefaultConfig):
-        # downloading the latest dataset
-
-        print("[INFO] Downloading Kaggle dataset...")
-        os.system("kaggle datasets download imdevskp/corona-virus-report -p ./data")
 
         luis_application = LuisApplication(
             config.LUIS_APP_ID,
@@ -46,12 +32,27 @@ class HeroBot(ActivityHandler):
 
         #TODO: get the file from storage
 
-        self._covid_data = pd.read_csv("./data/corona-virus-report.zip")
-        self._covid_data["Date"] = pd.to_datetime(self._covid_data["Date"])
+        self._confirmed = pd.read_csv(
+            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv",
+            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
+        self._deaths = pd.read_csv(
+            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv",
+            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
+        self._recovered = pd.read_csv(
+            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv",
+            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
+        self._curr_date = pd.to_datetime(self._confirmed.name)
 
         self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
 
-
+    def _filter_by_cntry(self, cntry):
+        out = None
+        try:
+            out = (self._confirmed[cntry].sum(), self._deaths[cntry].sum(), self._recovered[cntry].sum())
+        except Exception as e:
+            out = None
+            print(f"[WARNING] Encountered country matching problem, Country =  {e}")
+        return out
 
     async def on_members_added_activity(
         self, members_added: [ChannelAccount], turn_context: TurnContext
@@ -112,23 +113,19 @@ class HeroBot(ActivityHandler):
         #     f"Other intents detected: {intents_list}."
         # )
         #
-        df  = self._covid_data
 
         outputs =  []
         if luis_result.entities:
             for ent in luis_result.entities:
                 loc = self._AzMap.geocode(ent.entity, language='en-US')
                 cntry = loc.raw["address"]["country"]
-                out = filter_by_cntry(df, cntry)
+                out = self._filter_by_cntry(cntry)
                 if out is None:
                     cntry_code = loc.raw["address"]["countryCode"]
-                    out = filter_by_cntry(df, cntry_code)
+                    out = self._filter_by_cntry( cntry_code)
                 if out is not None:
-                    confirmed = out["Confirmed"].tolist()[0]
-                    dt  = helpers.to_human_readable(out["Date"].tolist()[0])
-                    deaths = out["Deaths"].tolist()[0]
-                    recovered = out["Recovered"].tolist()[0]
-
+                    confirmed, deaths, recovered = out
+                    dt  = helpers.to_human_readable(self._curr_date)
                     outputs.append(f"As of {dt}, for Country: {cntry} there were {confirmed} confirmed cases, {deaths} deaths and {recovered} recoveries")
                 else:
                     #TODO: propose the card with options
