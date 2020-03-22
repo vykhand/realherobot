@@ -3,6 +3,7 @@
 # Licensed under the MIT License.
 
 import os
+import logging
 
 # Load secrets from .env file
 from dotenv import load_dotenv
@@ -25,3 +26,5 @@ class DefaultConfig:
     # Azure Bot Service only -
     APP_ID = os.environ.get("MICROSOFT_APP_ID", "")
     APP_PASSWORD = os.environ.get("MICROSOFT_APP_SECRET", "")
+
+    INSTRUMENTATION_KEY = os.environ.get("INSTRUMENTATION_KEY")

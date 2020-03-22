@@ -5,6 +5,8 @@ import sys
 import traceback
 from datetime import datetime
 
+import logging
+
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
 from botbuilder.core import (
@@ -17,8 +19,17 @@ from botbuilder.schema import Activity, ActivityTypes
 
 from bots import HeroBot
 from config import DefaultConfig
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 CONFIG = DefaultConfig()
+
+# Application Insights bootstrap via OpenCensus
+logger = logging.getLogger(__name__)
+logger.addHandler(AzureLogHandler(
+    connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
+)
+# Root logger level is WARNING by default
+logger.setLevel(logging.DEBUG)
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
@@ -59,18 +70,23 @@ ADAPTER.on_turn_error = on_error
 # Create the Bot
 BOT = HeroBot(CONFIG)
 
+# Listen on / for GET requests
+# Only used by App Service AlwaysOn pings for now
+async def handle_get(req: Request) -> Response:
+
+    return Response(status=200, text="Hello.")    
+
+# Listen on /api/refresh-dataset
 async def refresh_dataset(req: Request) -> Response:
     # Handle dataset update
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
-        return Response(status=415)
+        return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     # BOT.fetch_dataset()
 
-    activity = Activity().deserialize(body)
-
-    return Response(status=200, text="All good")
+    return Response(status=200, text="Alright, refresh_dataset handler works.")
 
 # Listen for incoming requests on /api/messages
 async def messages(req: Request) -> Response:
@@ -78,9 +94,12 @@ async def messages(req: Request) -> Response:
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
-        return Response(status=415)
+        return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
     activity = Activity().deserialize(body)
+    if activity.text:
+        logger.debug(f'activity.text = {activity.text}')
+
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
     response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
@@ -90,8 +109,9 @@ async def messages(req: Request) -> Response:
 
 
 APP = web.Application(middlewares=[aiohttp_error_middleware])
-APP.router.add_post("/api/refresh-dataset", refresh_dataset)
 APP.router.add_post("/api/messages", messages)
+APP.router.add_post("/api/refresh-dataset", refresh_dataset)
+APP.router.add_get("/", handle_get)
 
 if __name__ == "__main__":
     try:

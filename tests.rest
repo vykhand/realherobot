@@ -1,3 +1,15 @@
 POST http://localhost:3978/api/refresh-dataset
+Content-Type: application/json
 
 { "dummy": true }
+
+###
+
+POST https://realherobot.azurewebsites.net/api/refresh-dataset
+Content-Type: application/json
+
+{ "dummy": true }
+
+###
+
+GET http://localhost:3978/
