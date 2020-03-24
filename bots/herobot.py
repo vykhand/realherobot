@@ -41,9 +41,9 @@ class HeroBot(ActivityHandler):
         self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
 
 
-    def fetch_dataset(self):
+    def fetch_dataset(self, force = False):
         last_update = self._get_last_update_ts()
-        if (self._last_update is None) or last_update > self._last_update:
+        if (self._last_update is None) or (last_update > self._last_update) or force:
             self._confirmed = pd.read_csv(C.CONFIRMED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
             self._deaths = pd.read_csv(C.DEATHS_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
             self._recovered = pd.read_csv(C.RECOVERED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")

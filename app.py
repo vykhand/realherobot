@@ -88,7 +88,7 @@ async def refresh_dataset(req: Request) -> Response:
     else:
         return Response(status=415, text="Invalid Content-Type, expecting application/json.")
 
-    BOT.fetch_dataset()
+    BOT.fetch_dataset(force=True)
 
     return Response(status=200, text="Alright, refresh_dataset handler works.")
 
