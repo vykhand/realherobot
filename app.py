@@ -4,6 +4,7 @@
 import sys
 import traceback
 from datetime import datetime
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import logging
 
@@ -24,12 +25,15 @@ from opencensus.ext.azure.log_exporter import AzureLogHandler
 CONFIG = DefaultConfig()
 
 # Application Insights bootstrap via OpenCensus
-logger = logging.getLogger(__name__)
-logger.addHandler(AzureLogHandler(
-    connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
-)
-# Root logger level is WARNING by default
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(CONFIG.ROOT_LOGGER + ".app")
+
+# setting up the logging
+root_log = logging.getLogger(CONFIG.ROOT_LOGGER)
+formatter = logging.Formatter('[%(asctime)s][%(name)s] {%(module)s.%(funcName)s:%(lineno)d %(levelname)s} - %(message)s')
+console_handl = logging.StreamHandler(stream=sys.stdout)
+console_handl.setFormatter(formatter)
+root_log.addHandler(console_handl)
+root_log.setLevel(logging.DEBUG)
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
@@ -114,6 +118,21 @@ APP.router.add_post("/api/refresh-dataset", refresh_dataset)
 APP.router.add_get("/", handle_get)
 
 if __name__ == "__main__":
+
+    if not CONFIG.LOCAL_MODE:
+        logger.info("Running in Azure Mode")
+        formatter = logging.Formatter('{%(name)s} - %(message)s')
+        az_handl = AzureLogHandler(connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
+        az_handl.setFormatter(formatter)
+        root_log.addHandler(az_handl)
+    else:
+        logger.info("Running in LOCAL Mode")
+
+    #setting up the periodic refresh
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(BOT.fetch_dataset, 'interval', hours=1)
+    scheduler.start()
+
     try:
         web.run_app(APP, host="0.0.0.0", port=CONFIG.PORT)
     except Exception as error:

@@ -10,11 +10,17 @@ from config import DefaultConfig
 import pandas as pd
 from geopy.geocoders import AzureMaps
 import geopy
-# Set a sane HTTP request timeout for geopy
-geopy.geocoders.options.default_timeout = 8
-
+import requests
+import logging
 
 from . import helpers
+from . import constants as C
+
+
+# Set a sane HTTP request timeout for geopy
+geopy.geocoders.options.default_timeout = 8
+log = logging.getLogger(C.LOGGER_NAME)
+
 
 
 class HeroBot(ActivityHandler):
@@ -29,22 +35,33 @@ class HeroBot(ActivityHandler):
             include_all_intents=True, include_instance_data=True
         )
         self.recognizer = LuisRecognizer(luis_application, luis_options, True)
-
+        self._last_update = None
         self.fetch_dataset()
 
         self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
 
+
     def fetch_dataset(self):
-        self._confirmed = pd.read_csv(
-            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv",
-            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
-        self._deaths = pd.read_csv(
-            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv",
-            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
-        self._recovered = pd.read_csv(
-            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv",
-            index_col=["Country/Region", "Province/State"]).iloc[:, -1]
-        self._curr_date = pd.to_datetime(self._confirmed.name)
+        last_update = self._get_last_update_ts()
+        if (self._last_update is None) or last_update > self._last_update:
+            self._confirmed = pd.read_csv(C.CONFIRMED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
+            self._deaths = pd.read_csv(C.DEATHS_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
+            self._recovered = pd.read_csv(C.RECOVERED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
+            self._curr_date = pd.to_datetime(self._confirmed.name)
+            self._last_update = last_update
+            log.info(f"Updated dataset, new curr_date = {self._curr_date}, last committed = {self._last_update}")
+
+    def _get_last_update_ts(self):
+        ret = None
+        try:
+            req = requests.get(C.API_LAST_UPDATE_URL)
+
+            last_update = req.json()[0]["commit"]["committer"]["date"]
+            ret =  pd.to_datetime(last_update)
+        except Exception as e:
+            log.error(f"Getting the last update timestamp failed with message: {e}, timestamp is set to: {self._last_update}")
+        return ret
+
 
     def _filter_by_cntry(self, cntry):
         out = None
@@ -52,7 +69,7 @@ class HeroBot(ActivityHandler):
             out = (self._confirmed[cntry].sum(), self._deaths[cntry].sum(), self._recovered[cntry].sum())
         except Exception as e:
             out = None
-            print(f"[WARNING] Encountered country matching problem, Country =  {e}")
+            log.warning(f"Encountered country matching problem, Country = {cntry} , error message: {e}")
         return out
 
     async def on_members_added_activity(

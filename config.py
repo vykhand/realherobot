@@ -14,7 +14,8 @@ load_dotenv(verbose=True, override=False)
 
 class DefaultConfig:
     """ Bot Configuration """
-
+    LOCAL_MODE = os.path.exists(".env")
+    ROOT_LOGGER = "realherobot"
     PORT = os.environ.get("PORT")
 
     LUIS_APP_ID = os.environ.get("LUIS_APP_ID")
