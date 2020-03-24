@@ -57,16 +57,16 @@
   background:white;
   border-width: 1;
   border-color:gray;
-  overflow-y:scroll;
 }
 
 .ChatWindow {
   position: fixed;
   bottom: 0;
   font-size: 1em;
-  width: 530px;
+  width: 550px;
   max-height:600px;
   z-index: 9999999999;
+  overflow-y:auto;
 
   @media (max-width: 720px) {
     width: 900vw;

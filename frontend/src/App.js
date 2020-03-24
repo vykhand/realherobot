@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useRef, useEffect }  from 'react';
 import './App.css';
 import MyWebChat from './components/MyWebChat'
 
 
-function App() {
+const App = () => {
+  const divRef = useRef(null)
+  useEffect(() => {
+    divRef.current.scrollIntoView({ behavior: 'smooth' })
+  })
   return (
     <div className="App">
       <header className="App-header">
@@ -17,7 +21,8 @@ function App() {
 
       </header>
       <div className="AppFrame">
-        <div className="ChatWindow">
+        <div className="ChatWindow"
+          ref={divRef}>
           <MyWebChat ></MyWebChat>
         </div>
       </div>
