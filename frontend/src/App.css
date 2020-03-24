@@ -1,0 +1,78 @@
+
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-container {
+
+  position: fixed;
+  background-color:'white';
+
+  @media (max-width: 720px) {
+    left: 0px;
+  }
+}
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  display: flex;
+  flex-direction: row;
+  position:fixed;
+  padding:40px;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.Item {
+  flex-grow: 2;
+}
+
+.AppFrame {
+  position: fixed;
+  bottom: 0px;
+  right:50px;
+  width: 550px;
+  height:600px;
+  background:white;
+  border-width: 1;
+  border-color:gray;
+  overflow-y:scroll;
+}
+
+.ChatWindow {
+  position: fixed;
+  bottom: 0;
+  font-size: 1em;
+  width: 530px;
+  max-height:600px;
+  z-index: 9999999999;
+
+  @media (max-width: 720px) {
+    width: 900vw;
+    height: 90vh;
+    border-left: none;
+    border-right: none;
+  }
+
+}
