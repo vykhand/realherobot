@@ -50,6 +50,8 @@ class HeroBot(ActivityHandler):
             self._curr_date = pd.to_datetime(self._confirmed.name)
             self._last_update = last_update
             log.info(f"Updated dataset, new curr_date = {self._curr_date}, last committed = {self._last_update}")
+        else:
+            log.debug(f"Based on timestamp check, last_update = {last_update}, prev last_update = {self._last_update}, no refresh required")
 
     def _get_last_update_ts(self):
         ret = None

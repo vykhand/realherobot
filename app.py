@@ -120,17 +120,20 @@ APP.router.add_get("/", handle_get)
 if __name__ == "__main__":
 
     if not CONFIG.LOCAL_MODE:
+        #Azure mode
+        root_log.setLevel(logger.INFO)
         logger.info("Running in Azure Mode")
         formatter = logging.Formatter('{%(name)s} - %(message)s')
         az_handl = AzureLogHandler(connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
         az_handl.setFormatter(formatter)
         root_log.addHandler(az_handl)
     else:
+        root_log.setLevel(logging.DEBUG)
         logger.info("Running in LOCAL Mode")
 
     #setting up the periodic refresh
     scheduler = BackgroundScheduler()
-    scheduler.add_job(BOT.fetch_dataset, 'interval', hours=1)
+    scheduler.add_job(BOT.fetch_dataset, 'interval', minutes=10)
     scheduler.start()
 
     try:
