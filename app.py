@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     if not CONFIG.LOCAL_MODE:
         #Azure mode
-        root_log.setLevel(logging.INFO)
+        root_log.setLevel(logging.DEBUG)
         logger.info("Running in Azure Mode")
         formatter = logging.Formatter('{%(name)s} - %(message)s')
         az_handl = AzureLogHandler(connection_string=f"InstrumentationKey={CONFIG.INSTRUMENTATION_KEY}")
