@@ -35,44 +35,68 @@ class HeroBot(ActivityHandler):
             include_all_intents=True, include_instance_data=True
         )
         self.recognizer = LuisRecognizer(luis_application, luis_options, True)
-        self._last_update = None
+        self._last_file_name = None
+        self._last_date = None
+        self._last_file_update = None
+
         self.fetch_dataset()
 
         self._AzMap = AzureMaps(subscription_key=config.AZURE_MAPS_KEY)
 
 
     def fetch_dataset(self, force = False):
-        last_update = self._get_last_update_ts()
-        if (self._last_update is None) or (last_update > self._last_update) or force:
-            self._confirmed = pd.read_csv(C.CONFIRMED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
-            self._deaths = pd.read_csv(C.DEATHS_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
-            self._recovered = pd.read_csv(C.RECOVERED_URL, index_col=["Country/Region", "Province/State"]).iloc[:, -1].fillna(0).astype("int")
-            self._curr_date = pd.to_datetime(self._confirmed.name)
-            self._last_update = last_update
-            log.info(f"Updated dataset, new curr_date = {self._curr_date}, last committed = {self._last_update}")
+
+        last_file_name, last_date = self._get_last_file_name()
+        last_file_update = self._get_last_update(last_file_name)
+
+        if (self._last_file_name is None) or (last_date > self._last_date) \
+                or (last_file_update > self._last_file_update) or force:
+            self._data = pd.read_csv(C.FILE_URL_BASE + last_file_name)
+            self._last_file_name = last_file_name
+            self._last_date = last_date
+            self._last_file_update = last_file_update
+
+            log.info(f"Updated dataset, new last_date = {self._last_date}, last committed = {self._last_file_update}")
         else:
-            log.debug(f"Based on timestamp check, last_update = {last_update}, prev last_update = {self._last_update}, no refresh required")
+            log.debug(f"Based on timestamp check, last_date = {last_date}, prev last_update = {self._last_date}, " +
+                f"timestamps: old {self._last_file_update}, new: {last_file_update} , no refresh required")
 
-    def _get_last_update_ts(self):
-        ret = None
+    def _get_last_file_name(self):
+        ret = (None, None)
         try:
-            req = requests.get(C.API_LAST_UPDATE_URL)
-
-            last_update = req.json()[0]["commit"]["committer"]["date"]
-            ret =  pd.to_datetime(last_update)
+            req = requests.get(C.FILE_DIR_URL)
+            dts = pd.DataFrame(pd.Series([n["name"] for n in req.json()], name="name"))
+            dts["dt"] = pd.to_datetime(dts["name"].str.rstrip(".csv"), errors = "coerce")
+            last_file = dts.sort_values("dt", ascending=False)["name"].tolist()[0]
+            last_date = dts.sort_values("dt", ascending=False)["dt"].tolist()[0]
+            ret = (last_file, last_date)
         except Exception as e:
-            log.error(f"Getting the last update timestamp failed with message: {e}, timestamp is set to: {self._last_update}")
+            log.error(f"Error getting last filename and date, message: {e}")
+        return ret
+
+    def _get_last_update(self, filename):
+        ret = None
+        if filename is not None:
+            try:
+                req = requests.get(C.LAST_UPDATE_URL_TEMPLATE.format(filename))
+
+                last_update = req.json()[0]["commit"]["committer"]["date"]
+                ret =  pd.to_datetime(last_update)
+            except Exception as e:
+                log.error(f"Getting the last update timestamp failed with message: {e}, timestamp is set to: {self._last_file_update}")
         return ret
 
 
     def _filter_by_cntry(self, cntry):
-        out = None
-        try:
-            out = (self._confirmed[cntry].sum(), self._deaths[cntry].sum(), self._recovered[cntry].sum())
-        except Exception as e:
-            out = None
-            log.warning(f"Encountered country matching problem, Country = {cntry} , error message: {e}")
-        return out
+        df = (self._data
+              .query("Country_Region == @cntry")
+              .groupby("Country_Region")[['Confirmed', 'Deaths', 'Recovered', 'Active']]
+              .sum())
+        if df.shape[0] == 0:
+            log.warning(f"Encountered country matching problem, Country = {cntry}")
+        else:
+            confirmed, dead, recovered, active = df.values[0]
+            return (confirmed, dead, recovered, active )
 
     async def on_members_added_activity(
         self, members_added: [ChannelAccount], turn_context: TurnContext
@@ -139,14 +163,16 @@ class HeroBot(ActivityHandler):
             for ent in luis_result.entities:
                 loc = self._AzMap.geocode(ent.entity, language='en-US')
                 cntry = loc.raw["address"]["country"]
+
                 out = self._filter_by_cntry(cntry)
                 if out is None:
                     cntry_code = loc.raw["address"]["countryCode"]
                     out = self._filter_by_cntry( cntry_code)
                 if out is not None:
-                    confirmed, deaths, recovered = out
-                    dt  = helpers.to_human_readable(self._curr_date)
-                    outputs.append(f"As of {dt}, for Country: {cntry} there were {confirmed} confirmed cases, {deaths} deaths and {recovered} recoveries")
+                    confirmed, deaths, recovered, active = out
+                    dt  = helpers.to_human_readable(self._last_date)
+                    outputs.append(f"As of {dt}, for Country: {cntry} there were {confirmed} confirmed cases, " +
+                                   f"{deaths} deaths, {recovered} recoveries and {active} active cases")
                 else:
                     #TODO: propose the card with options
                     outputs.append(f"Country : {cntry}, Code: {cntry_code} not found in the dataset, please try different spelling")
